@@ -5,12 +5,11 @@ cd $WORKSPACE
 
 mkdir -p var
 mkdir -p bin
+mkdir -p public
 
-module=supervisor
-app=elves-$module
-ver=$(ls -l bin | grep release | awk '{print $NF}' | awk -F '-' '{print $3}')
-file=$(ls -l bin | grep release | awk '{print $NF}')
-pidfile=./var/app.pid
+module=Application
+app=$module
+pidfile=var/app.pid
 
 function check_pid() {
     if [ -f $pidfile ];then
@@ -23,6 +22,10 @@ function check_pid() {
     return 0
 }
 
+function run() {
+    java -jar ./bin/$app.jar
+}
+
 function start() {
     check_pid
     running=$?
@@ -31,9 +34,9 @@ function start() {
         cat $pidfile
         return 1
     fi
-    cd $WORKSPACE/bin
-    nohup java -jar ./$file $WORKSPACE >/dev/null 2>&1 &
-    echo $! > .$pidfile
+    #cd $WORKSPACE/bin
+    nohup java -jar ./bin/$app.jar >/dev/null 2>&1 &
+    echo $! > ./$pidfile
     echo "$app started..., pid=$!"
 }
 
@@ -61,39 +64,23 @@ function status() {
 
 
 function build() {
-    cd src
+    cd src/backend
     mvn clean
-    if [ $? -ne 0 ]; then
-        exit $?
-    fi
     mvn package
-    if [ $? -ne 0 ]; then
-        exit $?
-    fi
-    cd ..
-    FILENAME=$(ls -l bin | grep release | awk '{print $NF}')
-    version=$(ls -l bin | grep release | awk '{print $NF}' | awk -F '-' '{print $3}')
-    mv bin/$FILENAME bin/$app-$version-release.jar
-    
-}
-
-function pack() {
-    build
-    FILENAME=$(ls -l bin | grep release | awk '{print $NF}')
-    version=$(ls -l bin | grep release | awk '{print $NF}' | awk -F '-' '{print $3}')
-    tar zcvf $app-linux-$version.tar.gz conf/ bin/$FILENAME bin/ROOT.war control database.sql --exclude conf/conf.properties
-}
-
-function version() {
-    echo $ver
+    cd ../../
+    rm -rf public/*
+    cd src/frontend
+    npm run build
 }
 
 function help() {
-    echo "$0 build|pack|start|stop|restart|status|version"
+    echo "$0 build|run|start|stop|restart|status"
 }
 
 if [ "$1" == "" ]; then
     help
+elif [ "$1" == "run" ];then
+    run
 elif [ "$1" == "stop" ];then
     stop
 elif [ "$1" == "start" ];then
@@ -104,10 +91,6 @@ elif [ "$1" == "status" ];then
     status
 elif [ "$1" == "build" ];then
     build
-elif [ "$1" == "pack" ];then
-    pack
-elif [ "$1" == "version" ];then
-    version
 else
     help
 fi
