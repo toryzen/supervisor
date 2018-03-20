@@ -18,7 +18,7 @@
 
     .index h2 {
         color: #666;
-        margin-bottom: 200px;
+        margin-bottom: 10px;
     }
 
     .index h2 p {
@@ -33,25 +33,35 @@
     <div class="index">
         <Row type="flex" justify="center" align="middle">
             <Col span="24">
-            <h1>
-                <img src="https://raw.githubusercontent.com/iview/iview/master/assets/logo.png">
-            </h1>
-            <h2>
-                <p>Welcome to your iView app!</p>
-                <Button type="ghost" @click="handleStart">Start iView</Button>
-            </h2>
+                <h1>
+                    <img src="../images/logo.png">
+                </h1>
+                <h2>
+                    <p>Elves Supervisor</p>
+                </h2>
+                <div><Input v-model="username" placeholder="username" style="width: 300px"></Input></div>
+                <br/>
+                <div><Input v-model="pwd" placeholder="password" style="width: 300px" type="password"></Input></div>
+                <br/>
+                <Button type="ghost" @click="handleStart">Login</Button>
             </Col>
         </Row>
     </div>
 </template>
 <script>
+    const axios = require('axios');
     export default {
         methods: {
             handleStart() {
-                this.$Modal.info({
-                    title: 'Bravo',
-                    content: 'Now, enjoy the convenience of iView.'
-                });
+                axios.post('/api/login',{passwd:this.pwd,username:this.username}).then(function (response) {
+                    if(response.data.flag==true){
+                        this.$router.push({path:'/home'});
+                    }else{
+                        this.$Modal.warning({title :'Login Message',content:response.data.message,okText:'Close'});
+                    }
+                }.bind(this)).catch(function (error) {
+                    this.$Modal.warning({title :'Server Error',content:error.message,okText:'Close'});
+                }.bind(this));
             }
         }
     };
